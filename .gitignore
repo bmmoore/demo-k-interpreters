@@ -1,0 +1,8 @@
+imp.out
+imp_split.out
+imp_hash.out
+imp_mutable.out
+sum-c
+*.cmi
+*.cmx
+*.o
