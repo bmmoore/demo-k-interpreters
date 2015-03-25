@@ -2,6 +2,7 @@ imp.out
 imp_split.out
 imp_hash.out
 imp_mutable.out
+imp-mlton
 sum-c
 *.cmi
 *.cmx
