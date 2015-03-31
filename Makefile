@@ -1,4 +1,4 @@
-PROGS=imp.out imp_split.out imp_hash.out imp_mutable.out imp-mlton Sum Imp sum-c
+PROGS=sum.out imp.out imp_split.out imp_hash.out imp_mutable.out imp-mlton Sum Imp sum-c
 all: $(PROGS)
 .PHONY: all clean distclean
 clean :
