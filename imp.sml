@@ -1,23 +1,22 @@
-structure StringKey : ORD_KEY = struct
-  type ord_key = string
-  val compare = String.compare
-end
-structure StrMap = BinaryMapFn(StringKey)
+(* Straightforward SML stepper *)
+
+functor K(Map : MAP) = struct
+open Map.Var
 
 datatype kitem = ACon of int
-          | AVar of string
+          | AVar of var
           | Div of kitem * kitem
           | Add of kitem * kitem
           | BCon of bool
           | Le of kitem * kitem
           | Not of kitem
           | And of kitem * kitem
-          | Assign of string * kitem
+          | Assign of var * kitem
           | If of kitem * kitem * kitem
           | While of kitem * kitem
           | Seq of kitem * kitem
           | Skip
-          | Pgm of string list * kitem
+          | Pgm of var list * kitem
           | DivL of kitem
           | DivR of kitem
           | AddL of kitem
@@ -26,10 +25,10 @@ datatype kitem = ACon of int
           | LeR of kitem
           | NotF
           | AndL of kitem
-          | AssignR of string
+          | AssignR of var
           | IfC of kitem * kitem
 
-type cfg = { k : kitem list, state : int StrMap.map}
+type cfg = { k : kitem list, state : int Map.map}
 
 exception Stuck of cfg
 
@@ -47,7 +46,7 @@ fun withK k {k = _, state = state} = {k = k, state = state}
 fun step (c:cfg) : cfg =
   case c of
     {k = AVar i :: rest, state} => 
-      (case StrMap.find (state, i) of
+      (case Map.find (state, i) of
          SOME v => withK (ACon v :: rest) c
        | NONE => raise (Stuck c))
   | {k = Div (ACon i, ACon j) :: rest, state} =>
@@ -64,7 +63,7 @@ fun step (c:cfg) : cfg =
   | {k = And (BCon false, _) :: rest, state} =>
      withK (BCon false :: rest) c
   | {k = Assign (i,ACon j) :: rest, state} =>
-     {k = rest, state = StrMap.insert (state,i,j)}
+     {k = rest, state = Map.insert (state,i,j)}
   | {k = Seq (s1, s2) :: rest, state} =>
      withK (s1::s2::rest) c
   | {k = Skip :: rest, state} =>
@@ -76,7 +75,7 @@ fun step (c:cfg) : cfg =
   | {k = (w as While (b, s)) :: rest, state} =>
      withK (If (b, Seq (s,w), Skip)::rest) c
   | {k = [Pgm (i :: xs, s)], state} =>
-     {k = [Pgm (xs,s)], state = StrMap.insert (state,i,0)}
+     {k = [Pgm (xs,s)], state = Map.insert (state,i,0)}
   | {k = [Pgm ([], s)], state} =>
      withK ([s]) c
   (* Heating/cooling rules *)
@@ -144,13 +143,13 @@ fun run c =
   end
   handle Stuck c' => c'
 
-fun sum n =
-  Pgm (["n","sum"],
-  Seq (Assign ("n",ACon n),
-  Seq (Assign ("sum",ACon 0),
-       While (Not (Le (AVar "n", ACon 0)),
-         Seq (Assign ("sum",Add (AVar "sum", AVar "n")),
-              Assign ("n", Add (AVar "n", ACon (~1))))))))
+fun sum_pgm size =
+  Pgm ([n,sum],
+  Seq (Assign (n,ACon size),
+  Seq (Assign (sum,ACon 0),
+       While (Not (Le (AVar n, ACon 0)),
+         Seq (Assign (sum,Add (AVar sum, AVar n)),
+              Assign (n, Add (AVar n, ACon (~1))))))))
 (*
   int n, sum,
 n = 100,
@@ -162,14 +161,57 @@ while (!(n <= 0)) {
  *)
 
 fun start (p : kitem) : cfg =
-  {k = [p], state = StrMap.empty}
+  {k = [p], state = Map.empty}
 
+fun test size = Map.report (#state (run (start (sum_pgm size))))
+end
 
-val size =
-  case CommandLine.arguments() of
-    [input] => valOf (Int.fromString input)
-  | _ => 1000000
+structure KStr = K(StrMap)
+structure KVarBin = K(VarBinMap)
+structure KVarSlot = K(VarSlotMap)
 
-fun print_binding (k,v) = print (k ^ ":" ^ Int.toString v  ^ "\n")
+structure EvalStr = Eval(StrMap)
+structure EvalVarBin = Eval(VarBinMap)
+structure EvalVarSlot = Eval(VarSlotMap)
 
-val _ = case run (start (sum size)) of {k = _, state} => StrMap.appi print_binding state
+structure SpecStr = Specialized(StrMap)
+structure SpecVarBin = Specialized(VarBinMap)
+structure SpecVarSlot = Specialized(VarSlotMap)
+
+datatype style = K | Eval | Spec | Hard
+datatype maps = Str | VarBin | VarSlot
+fun imps (K,Str) = KStr.test
+  | imps (K,VarBin)= KVarBin.test
+  | imps (K,VarSlot) = KVarSlot.test
+  | imps (Eval,Str) = EvalStr.test
+  | imps (Eval,VarBin) = EvalVarBin.test
+  | imps (Eval,VarSlot) = EvalVarSlot.test
+  | imps (Spec,Str) = SpecStr.test
+  | imps (Spec,VarBin) = SpecVarBin.test
+  | imps (Spec,VarSlot) = SpecVarSlot.test
+  | imps (Hard,_) = Hard.test
+
+fun arg (opts,x) = 
+  let fun set_style s {style, maps, size} = {style = s, maps = maps, size = size}
+      fun set_maps m {style, maps, size} = {style = style, maps = m, size = size}
+      fun set_size n {style, maps, size} = {style = style, maps = maps, size = n}
+  in case x of
+    "-k" => set_style K opts
+  | "-eval" => set_style Eval opts
+  | "-spec" => set_style Spec opts
+  | "-hard" => set_style Hard opts
+  | "-str" => set_maps Str opts
+  | "-varBin" => set_maps VarBin opts
+  | "-varSlot" => set_maps VarSlot opts
+  | _ => case Int.fromString x of
+      SOME n => set_size n opts
+  end
+
+fun parse (opts,args) = case args of
+    [] => opts
+  | (x :: args) => parse (arg (opts,x),args)
+
+val _ =
+  let val {style,maps,size} = parse ({style=K,maps=Str,size=1000000}, CommandLine.arguments ())
+  in imps (style,maps) size
+  end

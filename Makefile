@@ -7,8 +7,9 @@ distclean : clean
 	rm -f $(PROGS)
 %.out : %.ml
 	ocamlopt $^ -o $@
-imp-mlton : imp.sml imp.mlb
-	mlton -default-type int64 -output imp-mlton imp.mlb
+imp-mlton : maps.sml imp_eval.sml
+%-mlton : %.mlb %.sml
+	mlton -default-type int64 -output $@ $<
 sum-c : sum.c
 	gcc -O sum.c -o sum-c
 Imp : Imp.hs
