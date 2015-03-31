@@ -1,4 +1,4 @@
-PROGS=sum.out imp.out imp_split.out imp_hash.out imp_mutable.out imp-mlton Sum Imp sum-c
+PROGS=sum.out imp.out imp_split.out imp_hash.out imp_mutable.out imp-mlton imp2-mlton imp3-mlton Sum Imp sum-c
 all: $(PROGS)
 .PHONY: all clean distclean
 clean :
@@ -8,6 +8,8 @@ distclean : clean
 %.out : %.ml
 	ocamlopt $^ -o $@
 imp-mlton : maps.sml imp_eval.sml
+imp2-mlton : maps.sml
+imp3-mlton : maps.sml
 %-mlton : %.mlb %.sml
 	mlton -default-type int64 -output $@ $<
 sum-c : sum.c

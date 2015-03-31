@@ -3,6 +3,8 @@ imp_split.out
 imp_hash.out
 imp_mutable.out
 imp-mlton
+imp2-mlton
+imp3-mlton
 Imp
 Sum
 sum-c
