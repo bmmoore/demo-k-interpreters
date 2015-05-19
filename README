@@ -1,0 +1,11 @@
+This repository contains handwritten interpreters
+corresponding to a simple language defined in
+the K framework, http://www.kframework.org .
+Interpreters are written in SML, O'Caml, Haskell, and Maude.
+
+The Makefile will compile all files that need to be compiled.
+
+To compare with the performance of language implemnetations,
+there are also direct translations of the example program
+into Python, lua(for 5.3 and luajit 2), and C,
+as well as some of the languages mentioned above.
