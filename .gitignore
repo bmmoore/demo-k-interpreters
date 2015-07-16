@@ -12,3 +12,4 @@ sum-c
 *.cmx
 *.o
 *.hi
+*.jar

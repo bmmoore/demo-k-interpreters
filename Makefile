@@ -1,10 +1,12 @@
-PROGS=sum.out imp.out imp_split.out imp_hash.out imp_mutable.out imp-mlton imp2-mlton imp3-mlton Sum Imp sum-c
+PROGS=sum.out imp.out imp_split.out imp_hash.out imp_mutable.out imp-mlton imp2-mlton imp3-mlton Sum Imp sum-c ImpInScala.jar ImpInScala2.jar
 all: $(PROGS)
 .PHONY: all clean distclean
 clean :
 	rm -f *.cmx *.cmi *.o *.hi
 distclean : clean
 	rm -f $(PROGS)
+%.jar : %.scala
+	scalac -d $@ $^
 %.out : %.ml
 	ocamlopt $^ -o $@
 imp-mlton : maps.sml imp_eval.sml
