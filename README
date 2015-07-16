@@ -4,6 +4,8 @@ the K framework, http://www.kframework.org .
 Interpreters are written in SML, O'Caml, Haskell, and Maude.
 
 The Makefile will compile all files that need to be compiled.
+(You can remove programs from the first line if you are
+missing some compilers)
 
 To compare with the performance of language implemnetations,
 there are also direct translations of the example program
